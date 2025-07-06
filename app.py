@@ -74,16 +74,18 @@ else:
     st.info(f"Calculated elevation: **{elevation_cm:.1f} cm** (for {putt_length:.2f}m at {slope_percent:.2f}%)")
 
     if st.button("Predict Backstroke Length"):
-        df = data_frames[selected_sheet]
-        try:
-            row_vals = np.array(df.index, dtype=float)
-            col_vals = np.array([float(str(c).replace('cm', '').replace(' ','')) for c in df.columns])
-            grid = df.values.astype(float)
-            interp = RegularGridInterpolator((row_vals, col_vals), grid)
-            pred = interp([[putt_length, elevation_cm]])[0]
-            st.success(
-                f"Predicted Backstroke Length: {pred:.2f} cm "
-                f"(Direction: {direction}, Stimp: {stimp_dict[selected_sheet]:.2f} ft, Elevation: {elevation_cm:.1f} cm)"
-            )
-        except Exception as e:
-            st.error(f"Interpolation failed: {e}")
+    df = data_frames[selected_sheet]
+    try:
+        row_vals = np.array(df.index, dtype=float)
+        col_vals = np.array([float(str(c).replace('cm', '').replace(' ','')) for c in df.columns])
+        grid = df.values.astype(float)
+        interp = RegularGridInterpolator((row_vals, col_vals), grid)
+        pred = interp([[putt_length, elevation_cm]])[0]
+        pred_inch = pred / 2.54
+        st.success(
+            f"**Predicted Backstroke Length:** {pred:.2f} cm  \n"
+            f"**( = {pred_inch:.2f} inches )**  \n"
+            f"(Direction: {direction}, Stimp: {stimp_dict[selected_sheet]:.2f} ft, Elevation: {elevation_cm:.1f} cm)"
+        )
+    except Exception as e:
+        st.error(f"Interpolation failed: {e}")
