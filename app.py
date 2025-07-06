@@ -65,10 +65,11 @@ else:
         format_func=lambda x: x[0]
     )
 
+    # --- User inputs: putt length and slope % only ---
     putt_length = st.number_input("Putt Length (m)", min_value=0.5, max_value=20.0, value=3.0)
     slope_percent = st.number_input("Slope at ball position (%)", min_value=0.0, max_value=20.0, value=4.0)
 
-    # Calculate elevation in cm using the formula
+    # --- Calculate elevation in cm ---
     elevation_cm = putt_length * slope_percent
     st.info(f"Calculated elevation: **{elevation_cm:.1f} cm** (for {putt_length:.2f}m at {slope_percent:.2f}%)")
 
