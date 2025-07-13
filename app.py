@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 import pandas as pd
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
@@ -15,7 +15,6 @@ def extract_stimp_feet(sheet_name):
 
 st.title("Backstroke Predictor (Uphill/Downhill & Stimp Selector)")
 
-# --- Automatically load Excel from the repo (no upload) ---
 EXCEL_PATH = "data/Extracted_Backstroke_Table.xlsx"
 if not os.path.exists(EXCEL_PATH):
     st.error(f"Excel file not found at {EXCEL_PATH}. Please check your repo structure!")
@@ -65,27 +64,43 @@ else:
         format_func=lambda x: x[0]
     )
 
-    # --- User inputs: putt length and slope % only ---
     putt_length = st.number_input("Putt Length (m)", min_value=0.5, max_value=20.0, value=3.0)
     slope_percent = st.number_input("Slope at ball position (%)", min_value=0.0, max_value=20.0, value=4.0)
 
-    # --- Calculate elevation in cm ---
     elevation_cm = putt_length * slope_percent
     st.info(f"Calculated elevation: **{elevation_cm:.1f} cm** (for {putt_length:.2f}m at {slope_percent:.2f}%)")
 
     if st.button("Predict Backstroke Length"):
         df = data_frames[selected_sheet]
         try:
+            # Predict for selected (uphill/downhill)
             row_vals = np.array(df.index, dtype=float)
             col_vals = np.array([float(str(c).replace('cm', '').replace(' ','')) for c in df.columns])
             grid = df.values.astype(float)
             interp = RegularGridInterpolator((row_vals, col_vals), grid)
             pred = interp([[putt_length, elevation_cm]])[0]
             pred_inch = pred / 2.54
+
+            # Predict for FLAT (slope=0)
+            pred_flat = interp([[putt_length, 0.0]])[0]
+            pred_flat_inch = pred_flat / 2.54
+
+            # Ratio and imagine flat distance
+            ratio_to_flat = pred / pred_flat if pred_flat != 0 else np.nan
+            imagine_flat_dist = ratio_to_flat * putt_length if not np.isnan(ratio_to_flat) else np.nan
+
             st.success(
                 f"**Predicted Backstroke Length:** {pred:.2f} cm  \n"
                 f"**( = {pred_inch:.2f} inches )**  \n"
                 f"(Direction: {direction}, Stimp: {stimp_dict[selected_sheet]:.2f} ft, Elevation: {elevation_cm:.1f} cm)"
             )
+            st.info(
+                f"**Backstroke Length for FLAT putt:** {pred_flat:.2f} cm ( = {pred_flat_inch:.2f} inches )"
+            )
+            st.info(
+                f"**Downhill/Uphill-to-Flat Ratio:** {ratio_to_flat:.2f}  \n"
+                f"**'Imagine Flat' Distance:** {imagine_flat_dist:.2f} m  "
+            )
+
         except Exception as e:
             st.error(f"Interpolation failed: {e}")
